@@ -1,0 +1,14 @@
+{
+    "main": "index.html",
+    "logo": "oi-wiki.png",
+    "features": [
+        {
+            "code": "hello",
+            "explain": "hello world",
+            "cmds": [
+                "hello",
+                "你好"
+            ]
+        }
+    ]
+}
