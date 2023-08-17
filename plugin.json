@@ -1,13 +1,12 @@
 {
-    "main": "index.html",
-    "logo": "oi-wiki.png",
+    "preload": "preload.js",
+    "logo": "img/oi-wiki.png",
     "features": [
         {
-            "code": "hello",
-            "explain": "hello world",
+            "code": "global-search",
+            "explain": "全局搜索 OI-Wiki 内容",
             "cmds": [
-                "hello",
-                "你好"
+                "OI-Wiki"
             ]
         }
     ]
