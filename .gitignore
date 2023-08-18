@@ -1,3 +1,6 @@
+# target directory
+target/
+
 # Logs
 logs
 *.log
