@@ -1,8 +1,7 @@
 const electron = require('electron');   // electron 桌面集成，用于打开默认浏览器
 const axios = require('axios'); // http 通讯
 const cheerio = require('cheerio'); // html 解析
-const { remark } = require('remark');
-const stripMk = require('strip-markdown');
+const removeMk = require('remove-markdown') // Markdown 文本格式去除
 
 const topTabs = [];   // OI-Wiki 顶部导航标签
 
@@ -24,12 +23,7 @@ function stripHTMLAndEscapes(html) {
 
 /* 去掉 Markdown 格式 */
 function stripMarkdownFormat(mk) {
-    let res = null;
-    remark().use(stripMk).process(mk)
-        .then((text) => {
-            res = text;
-        });
-    return res;
+    return removeMk(mk);
 }
 
 function processItem(item) {
