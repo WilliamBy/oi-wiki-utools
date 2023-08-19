@@ -3,9 +3,8 @@ const axios = require('axios'); // http 通讯
 const cheerio = require('cheerio'); // html 解析
 const removeMk = require('remove-markdown') // Markdown 文本格式去除
 
-const topTabs = [];   // OI-Wiki 顶部导航标签
 const siteUrl = 'https://oi-wiki.org/';
-const logger = window.utools.showNotification;
+var indexArr = [];
 
 class UtoolsListItem {
     constructor(title, description, url, icon, type, payload) {
@@ -16,6 +15,10 @@ class UtoolsListItem {
         this.type = type;   // number类型，决定选中后的执行逻辑，0-直接跳转到url，1-打开父目录，2-打开子目录
         this.payload = payload;
     }
+}
+
+function logger(error) {
+    window.utools.showNavigation(error.lineNumber + ": " + error.message);
 }
 
 /* 确保url的最后一个字符为正斜 */
@@ -50,6 +53,51 @@ function processItem(item) {
     return newItem;
 }
 
+
+/**
+ * 递归构建导航树
+ * $nav: 是要进行递归构建树的 nav 标签的 cheerio 对象
+ * $: html 文档 cheerio 对象
+ * arr: 用于保存结果（导航树）的数组
+ */
+function navTreeBuilder($nav, $, arr) {
+    let $ls = $nav.children('ul').children('li');
+    $ls.each(
+        (i, li) => {
+            arr[i] = new UtoolsListItem();
+            arr[i].description = $nav.attr('aria-label');
+            let $subNav = $(li).children('nav');
+            if ($subNav.length != 0) {
+                let subArr = [];
+                navTreeBuilder($subNav, $, subArr);
+                arr[i].type = 'sub';
+                arr[i].title = $subNav.attr('aria-label');
+                arr[i].payload = subArr;
+                arr[i].icon = 'img/more.png';
+            } else {
+                let $a = $(li).children('a');
+                arr[i].type = 'link';
+                arr[i].title = $a.text();
+                arr[i].url = slashUrl(siteUrl + $a.attr('href'));
+                arr[i].icon = 'img/navigation.png';
+            }
+        }
+    )
+}
+
+async function indexWiki(wikiUrl) {
+    let navTree = [];
+    try {
+        let res = await axios.get(wikiUrl)
+        let $ = cheerio.load(res.data);
+        let $topNav = $('nav[data-md-level="0"]');
+        navTreeBuilder($topNav, $, navTree);
+    } catch (error) {
+        logger(error);
+    }
+    return navTree;
+}
+
 window.exports = {
     "global-search": { // 注意：键对应的是 plugin.json 中的 features.code
         mode: "list",  // 列表模式
@@ -57,34 +105,15 @@ window.exports = {
             // 进入插件应用时调用（可选）
             enter: async (action, callbackSetList) => {
                 // 如果进入插件应用就要显示列表数据
-                try {
-                    let res = await axios.get(siteUrl)
-                    let $ = cheerio.load(res.data);
-                    $('li.md-tabs__item > a').each(
-                        (i, elem) => {
-                            let tabText = $(elem).text().trim();
-                            topTabs[i] = new UtoolsListItem(
-                                tabText,
-                                '查看目录',
-                                slashUrl(siteUrl + $(elem).attr('href')),
-                                'img/title.png',
-                                1
-                            );
-                        }
-                    );
-                    if (topTabs.length !== 0) {
-                        callbackSetList(topTabs);
-                    }
-                } catch (error) {
-                    window.utools.showNotification(error);
-                }
+                indexArr = await indexWiki(siteUrl);
+                callbackSetList(indexArr);
             },
             // 子输入框内容变化时被调用 可选 (未设置则无搜索)
             search: async (action, searchWord, callbackSetList) => {
                 // 获取 OI-Wiki 关键词匹配列表
                 if (searchWord.trim().length === 0) {
                     // 清空子输入框后
-                    callbackSetList(topTabs);
+                    callbackSetList(indexArr);
                     return;
                 }
                 try {
@@ -103,7 +132,7 @@ window.exports = {
                                 newItem.highlight,
                                 slashUrl(siteUrl + newItem.url),
                                 'img/search.png',
-                                0
+                                'link'
                             ));
                         });
                         // 执行 callbackSetList 显示出来
@@ -115,57 +144,13 @@ window.exports = {
             // 用户选择列表中某个条目时被调用
             select: async (action, itemData, callbackSetList) => {
                 switch (itemData.type) {
-                    case 0:
+                    case 'link':
                         window.utools.hideMainWindow();
                         const url = itemData.url;
                         window.utools.shellOpenExternal(url);
                         window.utools.outPlugin();
                         break;
-                    case 1:
-                        callbackSetList([]);
-                        try {
-                            let res = await axios.get(itemData.url);
-                            let $ = cheerio.load(res.data);
-                            let navList = [];
-                            $('li.md-nav__item--active > nav[data-md-level="1"] > ul > li.md-nav__item').each(
-                                (i, elem) => {
-                                    navList[i] = new UtoolsListItem();
-                                    let $nav = $(elem).find('nav[data-md-level="2"]');
-                                    if ($nav.length !== 0) {
-                                        // 包含二级菜单
-                                        navList[i].title = $nav.children('label').eq(0).text();
-                                        navList[i].description = '展开查看';
-                                        navList[i].type = 2
-                                        navList[i].icon = 'img/more.png'
-                                        let subList = [];
-                                        $(elem).find('a.md-nav__link').each(
-                                            (j, el) => {
-                                                subList[j] = new UtoolsListItem(
-                                                    $(el).text(),
-                                                    navList[i].title,
-                                                    slashUrl(itemData.url + $(el).attr('href')),
-                                                    'img/navigation.png',
-                                                    0
-                                                )
-                                            }
-                                        )
-                                        navList[i].payload = subList;
-                                    } else {
-                                        let $a = $(elem).children('a.md-nav__link');
-                                        navList[i].title = $a.text();
-                                        navList[i].description = itemData.title;
-                                        navList[i].url = slashUrl(itemData.url + $a.attr('href'));
-                                        navList[i].type = 0;
-                                        navList[i].icon = 'img/navigation.png';
-                                    }
-                                }
-                            )
-                            callbackSetList(navList);
-                        } catch (error) {
-                            logger(error);
-                        }
-                        break;
-                    case 2:
+                    case 'sub':
                         callbackSetList(itemData.payload);
                         break;
                     default:
