@@ -58,29 +58,35 @@ function processItem(item) {
  * 递归构建导航树
  * $nav: 是要进行递归构建树的 nav 标签的 cheerio 对象
  * $: html 文档 cheerio 对象
- * arr: 用于保存结果（导航树）的数组
+ * arr: 用于保存结果（导航树）的数组，前置条件需要保证arr为空
+ * parent: 如果为null表示列表中不出现上一级菜单的选项，否则指向上一级导航树 
  */
-function navTreeBuilder($nav, $, arr) {
+function navTreeBuilder($nav, $, arr, parent) {
+    let navLabel = $nav.attr('aria-label');
+    if (parent != null) {
+        arr.push(new UtoolsListItem('上级菜单', navLabel, null, 'img/previous.png', 'back', parent));
+    }
     let $ls = $nav.children('ul').children('li');
     $ls.each(
         (i, li) => {
-            arr[i] = new UtoolsListItem();
-            arr[i].description = $nav.attr('aria-label');
+            let item = new UtoolsListItem();
+            item.description = navLabel;
             let $subNav = $(li).children('nav');
             if ($subNav.length != 0) {
                 let subArr = [];
-                navTreeBuilder($subNav, $, subArr);
-                arr[i].type = 'sub';
-                arr[i].title = $subNav.attr('aria-label');
-                arr[i].payload = subArr;
-                arr[i].icon = 'img/more.png';
+                navTreeBuilder($subNav, $, subArr, arr);
+                item.type = 'sub';
+                item.title = $subNav.attr('aria-label');
+                item.payload = subArr;
+                item.icon = 'img/more.png';
             } else {
                 let $a = $(li).children('a');
-                arr[i].type = 'link';
-                arr[i].title = $a.text();
-                arr[i].url = slashUrl(siteUrl + $a.attr('href'));
-                arr[i].icon = 'img/navigation.png';
+                item.type = 'link';
+                item.title = $a.text();
+                item.url = slashUrl(siteUrl + $a.attr('href'));
+                item.icon = 'img/navigation.png';
             }
+            arr.push(item);
         }
     )
 }
@@ -91,7 +97,7 @@ async function indexWiki(wikiUrl) {
         let res = await axios.get(wikiUrl)
         let $ = cheerio.load(res.data);
         let $topNav = $('nav[data-md-level="0"]');
-        navTreeBuilder($topNav, $, navTree);
+        navTreeBuilder($topNav, $, navTree, null);
     } catch (error) {
         logger(error);
     }
@@ -151,6 +157,7 @@ window.exports = {
                         window.utools.outPlugin();
                         break;
                     case 'sub':
+                    case 'back':
                         callbackSetList(itemData.payload);
                         break;
                     default:
