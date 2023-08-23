@@ -1,4 +1,3 @@
-const electron = require('electron');   // electron 桌面集成，用于打开默认浏览器
 const axios = require('axios'); // http 通讯
 const cheerio = require('cheerio'); // html 解析
 const removeMk = require('remove-markdown') // Markdown 文本格式去除
@@ -152,8 +151,7 @@ window.exports = {
                 switch (itemData.type) {
                     case 'link':
                         window.utools.hideMainWindow();
-                        const url = itemData.url;
-                        window.utools.shellOpenExternal(url);
+                        window.utools.shellOpenExternal(itemData.url);
                         window.utools.outPlugin();
                         break;
                     case 'sub':
