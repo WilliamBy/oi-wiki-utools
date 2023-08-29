@@ -2,9 +2,9 @@
 
 ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/WilliamBy/oi-wiki-utools?logo=github)
 
-![GitHub package.json dependency version (subfolder of monorepo)](https://img.shields.io/github/package-json/dependency-version/WilliamBy/oi-wiki-utools/axios)
-![GitHub package.json dependency version (subfolder of monorepo)](https://img.shields.io/github/package-json/dependency-version/WilliamBy/oi-wiki-utools/cheerio)
-![GitHub package.json dependency version (subfolder of monorepo)](https://img.shields.io/github/package-json/dependency-version/WilliamBy/oi-wiki-utools/remove-markdown)
+![GitHub package.json dependency version (subfolder of monorepo)](https://img.shields.io/github/package-json/dependency-version/WilliamBy/oi-wiki-utools/axios?filename=contents%2Fpackage.json)
+![GitHub package.json dependency version (subfolder of monorepo)](https://img.shields.io/github/package-json/dependency-version/WilliamBy/oi-wiki-utools/cheerio?filename=contents%2Fpackage.json)
+![GitHub package.json dependency version (subfolder of monorepo)](https://img.shields.io/github/package-json/dependency-version/WilliamBy/oi-wiki-utools/remove-markdown?filename=contents%2Fpackage.json)
 
 > 使用 [Utools](https://www.u.tools/) 便捷地搜索 [oi-wiki.org](oi-wiki.org) 上的内容！
 
